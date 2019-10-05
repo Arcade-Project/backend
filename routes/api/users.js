@@ -103,9 +103,9 @@ router.post('/register', (req, res) => {
           country: country.label,
           prefix,
           phone,
-          birthday
+          birthday,
+          color: 'blue'
         });
-
         newUser.save();
       })
       .catch(function(error) {

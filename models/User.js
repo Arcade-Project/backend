@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 //create Schema
-
 const UserSchema = new Schema({
   uid: {
     type: String,
@@ -34,6 +33,9 @@ const UserSchema = new Schema({
   birthday: {
     type: Date,
     default: Date.now
+  },
+  color: {
+    type: String
   },
   register_date: {
     type: Date,
