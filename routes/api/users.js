@@ -18,6 +18,35 @@ router.get('/', (req, res) => {
     .then(users => res.send(res.json(users)));
 });
 
+// @route GET api/user
+// @desc Get active users
+// @access Public
+router.get('/active', (req, res) => {
+  User.find()
+    .sort({ date: -1 })
+    .then(users => res.send(users));
+});
+
+// @route GET api/user
+// @desc Get top users
+// @access Public
+router.get('/top', (req, res) => {
+  User.find()
+    .sort({ date: -1 })
+    .then(users => res.send(users));
+});
+
+// @route GET api/user
+// @desc Get friend users
+// @access Public
+router.get('/friends', (req, res) => {
+  User.find()
+    .sort({ date: -1 })
+    .then(users => res.send(users));
+});
+
+
+
 // @route   POST api/user
 // @desc    Register new user
 // @access  Public
