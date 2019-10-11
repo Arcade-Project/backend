@@ -153,21 +153,25 @@ router.post('/check_login', (req, res) => {
   const { token } = req.body;
   console.log(req.body, 'body');
   // idToken comes from the client app
-  if(token){
+  if(token) {
     console.log(token)
-  admin
-    .auth()
-    .verifyIdToken(token)
-    .then(function(decodedToken) {
-      let uid = decodedToken.uid;
-      res.send({ verified: true });
-    })
-    .catch(function(error) {
-      // Handle error
-      console.log(error, 'checkLogin');
-      res.status(401).send(error);
-      next();
-    });}
+    admin
+      .auth()
+      .verifyIdToken(token)
+      .then(function(decodedToken) {
+        let uid = decodedToken.uid;
+        console.log('success')
+        res.send({ verified: true });
+      })
+      .catch(function(error) {
+        // Handle error
+        console.log(error, 'checkLogin');
+        res.status(401).send(error);
+        next();
+      });
+  }
+    
+    res.status(501).send('tenes que mandar un token');
 });
 
 module.exports = router;
