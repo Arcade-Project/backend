@@ -23,6 +23,7 @@ router.get('/', (req, res) => {
 // @access Public
 router.get('/active', (req, res) => {
   User.find()
+    .limit(5)
     .sort({ date: -1 })
     .then(users => res.send(users));
 });
@@ -32,6 +33,7 @@ router.get('/active', (req, res) => {
 // @access Public
 router.get('/top', (req, res) => {
   User.find()
+    .limit(5)
     .sort({ date: -1 })
     .then(users => res.send(users));
 });
@@ -41,6 +43,7 @@ router.get('/top', (req, res) => {
 // @access Public
 router.get('/friends', (req, res) => {
   User.find()
+    .limit(5)
     .sort({ date: -1 })
     .then(users => res.send(users));
 });
@@ -170,8 +173,7 @@ router.post('/check_login', (req, res) => {
         next();
       });
   }
-    
-    res.status(501).send('tenes que mandar un token');
+    //res.status(501).send('tenes que mandar un token'); 
 });
 
 module.exports = router;
