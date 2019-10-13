@@ -23,21 +23,37 @@ router.get('/recent', (req, res) => {
 // @route GET api/score
 // @desc GET All scores by highest in table format
 // @access Public
-router.get('/high', (req, res) => {
-  Score.find({})
-    .sort({ score: 1 })
-    .then(scores => {
-      scores.map((element, index) => {
-        User.findOne({uid: element.uid})
-        .then(user => {
-          res.send({
-            key: index,
-            name: user.nickname,
-            score: element.score
-          })
+router.get('/high', async (req, res) => {
+
+  const scores = async () => {
+    return await Score.find({}, err => {
+      if (err) res.status(400).send('not found');
+    })
+      .sort({ score: 1 })
+      .then(scores => {
+        // console.log('scores: ', scores);
+        return scores;
+      });
+  };
+
+  const formated = async scoreArray => {
+    let results = [];
+    await scoreArray.map(async (element, index) => {
+      await User.findOne({ uid: element.uid }).then(user => {
+        // console.log('user:', user);
+        results.push({
+          key: index,
+          name: user.nickname,
+          score: element.score
         });
-      })
-    });    
+      });
+    });
+    return results;
+  };
+  //checkear como hacer esto
+  console.log(await formated(await scores()));
+  res.send(await formated(await scores()));
+  
 });
 
 // @route POST api/score
@@ -45,20 +61,21 @@ router.get('/high', (req, res) => {
 // @access Public
 router.post('/from_game', (req, res) => {
   let game = req.body.game;
-  Score.find({game})
+  Score.find({ game }, err => {
+    if (err) res.status(400).send('not found');
+  })
     .sort({ score: 1 })
     .then(scores => {
       scores.map((element, index) => {
-        User.findOne({uid: element.uid})
-        .then(user => {
+        User.findOne({ uid: element.uid }).then(user => {
           res.send({
             key: index,
             name: user.nickname,
             score: element.score
-          })
+          });
         });
-      })
-    });    
+      });
+    });
 });
 
 // @route GET api/score

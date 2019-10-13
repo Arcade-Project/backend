@@ -181,8 +181,10 @@ router.post('/check_login', (req, res) => {
         res.status(401).send(error);
         next();
       });
+  }else{
+    res.status(501).send('tenes que mandar un token');
   }
-    //res.status(501).send('tenes que mandar un token'); 
+     
 });
 
 module.exports = router;

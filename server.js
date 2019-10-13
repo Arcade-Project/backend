@@ -28,23 +28,6 @@ admin.initializeApp({
   })
 });
 
-async function verifyToken(req, res, next) {
-  const idToken = req.headers.authorization;
-  console.log('verifing token...');
-  try {
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    if (decodedToken) {
-      req.body.uid = decodedToken.uid;
-      console.log(decodedToken);
-      return next();
-    } else {
-      return res.status(401).send('You are not authorized!');
-    }
-  } catch (e) {
-    return res.status(401).send('You are not authorized!');
-  }
-}
-
 mongoose
   .connect(process.env.LOCAL_MONGO_URL, {
     useNewUrlParser: true,
@@ -54,7 +37,7 @@ mongoose
   .catch(err => console.log(err));
 
 app.use(express.json());
-//app.use(verifyToken);
+
 app.use('/api', api);
 app.use('/user', users);
 app.use('/score', score);
