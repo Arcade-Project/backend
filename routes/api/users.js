@@ -19,6 +19,15 @@ router.get('/', (req, res) => {
 });
 
 // @route GET api/user
+// @desc Get user by id
+// @access Public
+router.get('/id', (req, res) => {
+  User.findOne(req.body.id)
+    .sort({ date: -1 })
+    .then(users => res.send(users));
+});
+
+// @route GET api/user
 // @desc Get active users
 // @access Public
 router.get('/active', (req, res) => {

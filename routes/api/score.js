@@ -4,6 +4,8 @@ const admin = require('firebase-admin');
 
 // Score Model
 const Score = require('../../models/Score');
+// User Model
+const User = require('../../models/User');
 
 router.post('/test', (req, res) => {
   console.log(req.body);
@@ -12,19 +14,51 @@ router.post('/test', (req, res) => {
 // @route GET api/score
 // @desc Get All scores by date
 // @access Public
-router.get('/recent_score', (req, res) => {
+router.get('/recent', (req, res) => {
   Score.find()
     .sort({ date: -1 })
     .then(scores => res.send(res.json(scores)));
 });
 
 // @route GET api/score
-// @desc Get All scores by highest
+// @desc GET All scores by highest in table format
 // @access Public
-router.get('/high_score', (req, res) => {
-  Score.find()
+router.get('/high', (req, res) => {
+  Score.find({})
     .sort({ score: 1 })
-    .then(scores => res.send(res.json(scores)));
+    .then(scores => {
+      scores.map((element, index) => {
+        User.findOne({uid: element.uid})
+        .then(user => {
+          res.send({
+            key: index,
+            name: user.nickname,
+            score: element.score
+          })
+        });
+      })
+    });    
+});
+
+// @route POST api/score
+// @desc POST send scores by game in table format
+// @access Public
+router.post('/from_game', (req, res) => {
+  let game = req.body.game;
+  Score.find({game})
+    .sort({ score: 1 })
+    .then(scores => {
+      scores.map((element, index) => {
+        User.findOne({uid: element.uid})
+        .then(user => {
+          res.send({
+            key: index,
+            name: user.nickname,
+            score: element.score
+          })
+        });
+      })
+    });    
 });
 
 // @route GET api/score
