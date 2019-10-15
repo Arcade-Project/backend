@@ -52,6 +52,14 @@ const UserSchema = new Schema({
   games: {
     type: Array,
     default: []
+  },
+  friends: {
+    type: Array,
+    default: []
+  },
+  requests: {
+    type: Array,
+    default: []
   }
 });
 

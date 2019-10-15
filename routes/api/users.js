@@ -57,8 +57,6 @@ router.get('/friends', (req, res) => {
     .then(users => res.send(users));
 });
 
-
-
 // @route   POST api/user
 // @desc    Register new user
 // @access  Public
@@ -135,21 +133,21 @@ router.post('/login', async (req, res, next) => {
   const token = req.headers.authorization;
 
   // idToken comes from the client app
-  if(token){
-    console.log(token)
+  if (token) {
+    console.log(token);
     admin
-    .auth()
-    .verifyIdToken(token)
-    .then(function(decodedToken) {
-      let uid = decodedToken.uid;
-      console.log('Logged and verified.');
-    })
-    .catch(function(error) {
-      // Handle error
-      console.log(error, 'login');
-      res.status(401).send(error);
-      next();
-    });
+      .auth()
+      .verifyIdToken(token)
+      .then(function(decodedToken) {
+        let uid = decodedToken.uid;
+        console.log('Logged and verified.');
+      })
+      .catch(function(error) {
+        // Handle error
+        console.log(error, 'login');
+        res.status(401).send(error);
+        next();
+      });
   }
 
   try {
@@ -165,14 +163,14 @@ router.post('/check_login', (req, res) => {
   const { token } = req.body;
   console.log(req.body, 'body');
   // idToken comes from the client app
-  if(token) {
-    console.log(token)
+  if (token) {
+    console.log(token);
     admin
       .auth()
       .verifyIdToken(token)
       .then(function(decodedToken) {
         let uid = decodedToken.uid;
-        console.log('success')
+        console.log('success');
         res.send({ verified: true });
       })
       .catch(function(error) {
@@ -181,10 +179,67 @@ router.post('/check_login', (req, res) => {
         res.status(401).send(error);
         next();
       });
-  }else{
+  } else {
     res.status(501).send('tenes que mandar un token');
   }
-     
+});
+
+//Friendship System
+
+router.post('/addFriend', async (req, res) => {
+  const { myid, friend } = req.body;
+  const myfriend = await User.findOne({ uid: friend }, err => {if(err) res.status(400).send(err)}).then();
+  //User.findOneAndUpdate({uid: friend}, {$push: {requests: myid}}, res.status(202).send('Solicitud enviada...'));
+  myfriend.requests.push(myid);
+  await User.replaceOne({ uid: friend }, myfriend, err => {
+    if (!err) {
+      res.status(202).send('Solicitud enviada...');
+    } else {
+      res.status(400).send(err);
+    }
+  });
+});
+
+router.post('/acceptFriend', async (req, res) => {
+  const { myid, friend } = req.body;
+  const me = await User.findOne({ uid: myid }, err => {if(err) res.status(400).send(err)}).then();
+  const myfriend = await User.findOne({ uid: friend }, err => {if(err) res.status(400).send(err)}).then();
+
+  //User.findOneAndUpdate({uid: myid}, {requests: {$elemMatch: {uid: friend}}}, res.status(202).send('Eliminado de requests'));
+  me.requests = me.requests.filter(req => req !== friend);
+  //User.findOneAndUpdate({uid: friend}, {$push: {friends: myid}}, res.status(202).send('Amigo agregado 1'));
+  myfriend.friends.push(myid);
+  //User.findOneAndUpdate({uid: myid}, {$push: {friends: friend}}, res.status(202).send('Amigo agregado 2'));
+  me.friends.push(friend);
+
+  await User.replaceOne({ uid: myid }, me, err => {if(err) res.status(400).send(err)});
+  await User.replaceOne({ uid: friend }, myfriend, err => {if(err) res.status(400).send(err)});
+  res.status(202).send('Amistad aceptada.');
+});
+
+router.post('/declineFriend', async (req, res) => {
+  const { myid, friend } = req.body;
+  const me = await User.findOne({ uid: myid }, err => {if(err) res.status(400).send(err)}).then();
+  //User.findOneAndUpdate({uid: myid}, {request: friends.filter(uid => uid !== friend)}, res.status(202).send('Eliminado de requests'));
+  me.requests = me.requests.filter(req => req !== friend);
+  await User.replaceOne({ uid: myid }, me, err => {if(err) res.status(400).send(err)});
+  res.status(202).send('Solicitud rechazada.');
+});
+
+router.post('/removeFriend', async (req, res) => {
+  const { myid, friend } = req.body;
+
+  const me = await User.findOne({ uid: myid }, err => {if(err) res.status(400).send(err)}).then();
+  const myfriend = await User.findOne({ uid: friend }, err => {if(err) res.status(400).send(err)}).then();
+
+  //User.findOneAndUpdate({uid: myid}, {friends: friends.filter(uid => uid !== friend)}, res.status(202).send('Eliminado de tus amigos'));
+  me.friends = me.friends.filter(uid => uid !== friend);
+  //User.findOneAndUpdate({uid: friend}, {friends: friends.filter(uid => uid !== myid)}, res.status(202).send('Eliminado de sus amigos'));
+  myfriend.friends = myfriend.friends.filter(uid => uid !== myid);
+
+  await User.replaceOne({ uid: myid }, me, err => {if(err) res.status(400).send(err)});
+  await User.replaceOne({ uid: friend }, myfriend, err => {if(err) res.status(400).send(err)});
+  res.status(202).send('Amistad eliminada.');
 });
 
 module.exports = router;
