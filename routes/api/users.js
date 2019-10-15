@@ -184,6 +184,14 @@ router.post('/check_login', (req, res) => {
   }
 });
 
+//Profile
+
+router.post('/profile', async(req,res) => {
+  const {id} = req.body;
+  const profile = await User.findOne({uid: id}, err => {if(err) res.status(400).send(err)}).then(); 
+  res.status(202).send(profile);
+});
+
 //Friendship System
 
 router.post('/addFriend', async (req, res) => {
