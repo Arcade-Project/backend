@@ -23,37 +23,39 @@ router.get('/recent', (req, res) => {
 // @route GET api/score
 // @desc GET All scores by highest in table format
 // @access Public
+
+const lookForUser = (element, index) => {
+  return User.findOne({ uid: element.uid }).then(user => {
+    return {
+      key: index,
+      name: user.nickname,
+      score: element.score
+    };
+  });
+}
+
+const formated = (scores) => {
+  return Promise.all(
+    scores.map((element, index) => lookForUser(element, index))
+  );
+};
+
 router.get('/high', async (req, res) => {
-  const scores = await Score.find({}, err => {
-    if (err) res.status(400).send('not found');
-  })
-    .sort({ score: 1 })
-    .then();
+  try {
+    const scores = await Score.find({}, err => {
+      if (err) res.status(400).send('not found');
+    })
+      .sort({ score: 1 })
+      .then()
 
-  //console.log(scores);
-
-  const lookForUser = async (element, index) => {
-    return await User.findOne({ uid: element.uid }).then(user => {
-      return {
-        key: index,
-        name: user.nickname,
-        score: element.score
-      };
-    });
+    formated(scores).then(data=>
+      console.log(data))
+    //checkear como hacer esto https://flaviocopes.com/javascript-async-await-array-map/
+    // console.log(formated);
+    //res.send( formated);
+  } catch(err) {
+    console.log(err)
   }
-
-  const formated = async () => {
-    return await Promise.all(
-      scores.map((element, index) => {
-         lookForUser(element, index);
-      })
-    );
-  };
-
-  formated().then(data=>console.log(data))
-  //checkear como hacer esto https://flaviocopes.com/javascript-async-await-array-map/
-  // console.log(formated);
-  //res.send( formated);
 });
 
 // @route POST api/score
