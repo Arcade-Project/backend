@@ -29,7 +29,8 @@ const lookForUser = (element, index) => {
     return {
       key: index,
       name: user.nickname,
-      score: element.score
+      score: element.score,
+      uid: element.uid
     };
   });
 }
@@ -49,10 +50,7 @@ router.get('/high', async (req, res) => {
       .then()
 
     formated(scores).then(data=>
-      console.log(data))
-    //checkear como hacer esto https://flaviocopes.com/javascript-async-await-array-map/
-    // console.log(formated);
-    //res.send( formated);
+      res.status(202).send(data));
   } catch(err) {
     console.log(err)
   }
@@ -70,10 +68,11 @@ router.post('/from_game', (req, res) => {
     .then(scores => {
       scores.map((element, index) => {
         User.findOne({ uid: element.uid }).then(user => {
-          res.send({
+          res.status(202).send({
             key: index,
             name: user.nickname,
-            score: element.score
+            score: element.score,
+            uid: element.uid
           });
         });
       });
