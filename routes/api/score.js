@@ -30,12 +30,13 @@ const lookForUser = (element, index) => {
       key: index,
       name: user.nickname,
       score: element.score,
-      uid: element.uid
+      uid: element.uid,
+      date: element.date
     };
   });
-}
+};
 
-const formated = (scores) => {
+const formated = scores => {
   return Promise.all(
     scores.map((element, index) => lookForUser(element, index))
   );
@@ -47,36 +48,47 @@ router.get('/high', async (req, res) => {
       if (err) res.status(400).send('not found');
     })
       .sort({ score: 1 })
-      .then()
+      .then();
 
-    formated(scores).then(data=>
-      res.status(202).send(data));
-  } catch(err) {
-    console.log(err)
+    formated(scores).then(data => res.status(202).send(data));
+  } catch (err) {
+    console.log(err);
   }
 });
+
+const asyncFunction = (element, index) => {
+  return User.findOne({ uid: element.uid }).then(user => {
+    return {
+      key: index,
+      name: user.nickname,
+      score: element.score,
+      uid: element.uid,
+      date: element.date
+    };
+  });
+};
+
+const formatResults = arr => {
+  return Promise.all(
+    arr.map((element, index) => asyncFunction(element, index))
+  );
+};
 
 // @route POST api/score
 // @desc POST send scores by game in table format
 // @access Public
-router.post('/from_game', (req, res) => {
-  let game = req.body.game;
-  Score.find({ game }, err => {
-    if (err) res.status(400).send('not found');
-  })
-    .sort({ score: 1 })
-    .then(scores => {
-      scores.map((element, index) => {
-        User.findOne({ uid: element.uid }).then(user => {
-          res.status(202).send({
-            key: index,
-            name: user.nickname,
-            score: element.score,
-            uid: element.uid
-          });
-        });
-      });
-    });
+router.post('/from_game', async (req, res) => {
+  try {
+    let game = req.body.game;
+    let scorelist = await Score.find({ game }, err => {
+      if (err) res.status(400).send('not found');
+    })
+      .sort({ score: 1 })
+      .then();
+    formatResults(scorelist).then(data => res.status(202).send(data));
+  } catch (err) {
+    res.status(400).send(err);
+  }
 });
 
 // @route GET api/score

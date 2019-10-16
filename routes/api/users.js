@@ -57,6 +57,37 @@ router.get('/friends', (req, res) => {
     .then(users => res.send(users));
 });
 
+
+const lookForUser = (element, index) => {
+  return User.findOne({ uid: element }).then(user => {
+    return {
+      key: index,
+      nickname: user.nickname,
+      uid: element
+    };
+  });
+}
+
+const formated = (arr) => {
+  return Promise.all(
+    arr.map((element, index) => lookForUser(element, index))
+  );
+};
+
+// @route GET api/user
+// @desc Get friend users
+// @access Public
+router.post('/notifications', async(req, res) => {
+  try{
+  let uid = req.body;
+  const user = await User.findOne(uid, (err) => {if(err) res.status(400).send('Not Found')}).then()
+  formated(user.requests).then(data=>
+    res.status(202).send(data));
+  }catch(err){
+    res.status(400).send(err)
+  }
+});
+
 // @route   POST api/user
 // @desc    Register new user
 // @access  Public
@@ -198,7 +229,7 @@ router.post('/addFriend', async (req, res) => {
   const { myid, friend } = req.body;
   const myfriend = await User.findOne({ uid: friend }, err => {if(err) res.status(400).send(err)}).then();
 
-  if(myfriend.request.includes(myid)){
+  if(myfriend.requests.includes(myid)){
     res.status(400).send({done: false, text: 'Ya tienes una solicitud pendiente.'})
   }else{
   myfriend.requests.push(myid);  
@@ -218,7 +249,7 @@ router.post('/acceptFriend', async (req, res) => {
   const me = await User.findOne({ uid: myid }, err => {if(err) res.status(400).send(err)}).then();
   const myfriend = await User.findOne({ uid: friend }, err => {if(err) res.status(400).send(err)}).then();
   
-  me.requests = me.requests.filter(req => req !== friend);
+  me.requests = me.requests.filter(request => request !== friend);
   myfriend.friends.push(myid);
   me.friends.push(friend);
 
@@ -231,7 +262,7 @@ router.post('/declineFriend', async (req, res) => {
   const { myid, friend } = req.body;
   const me = await User.findOne({ uid: myid }, err => {if(err) res.status(400).send(err)}).then();
   
-  me.requests = me.requests.filter(req => req !== friend);
+  me.requests = me.requests.filter(request => request !== friend);
   await User.replaceOne({ uid: myid }, me, err => {if(err) res.status(400).send(err)});
   res.status(202).send({done: true, text:'Solicitud rechazada.'});
 });
