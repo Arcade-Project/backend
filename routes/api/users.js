@@ -28,35 +28,29 @@ router.get('/id', (req, res) => {
 });
 
 // @route GET api/user
-// @desc Get active users
-// @access Public
-router.get('/active', (req, res) => {
-  User.find()
-    .limit(5)
-    .sort({ date: -1 })
-    .then(users => res.send(users));
-});
-
-// @route GET api/user
 // @desc Get top users
 // @access Public
-router.get('/top', (req, res) => {
-  User.find()
-    .limit(5)
-    .sort({ date: -1 })
-    .then(users => res.send(users));
+router.post('/players', (req, res) => {
+  const { category, id } = req.body;
+  if (category === 'Top') {
+    User.find()
+      .limit(5)
+      .sort({ date: -1 })
+      .then(users => res.send(users));
+  } else {
+    if (category === 'Active') {
+      User.find()
+        .limit(5)
+        .sort({ activity: -1 })
+        .then(users => res.send(users));
+    } else if (category === 'Friends') {
+      User.find({ friends: id })
+        .limit(5)
+        .sort({ date: -1 })
+        .then(users => res.send(users));
+    }
+  }
 });
-
-// @route GET api/user
-// @desc Get friend users
-// @access Public
-router.get('/friends', (req, res) => {
-  User.find()
-    .limit(5)
-    .sort({ date: -1 })
-    .then(users => res.send(users));
-});
-
 
 const lookForUser = (element, index) => {
   return User.findOne({ uid: element }).then(user => {
@@ -66,25 +60,24 @@ const lookForUser = (element, index) => {
       uid: element
     };
   });
-}
+};
 
-const formated = (arr) => {
-  return Promise.all(
-    arr.map((element, index) => lookForUser(element, index))
-  );
+const formated = arr => {
+  return Promise.all(arr.map((element, index) => lookForUser(element, index)));
 };
 
 // @route GET api/user
 // @desc Get friend users
 // @access Public
-router.post('/notifications', async(req, res) => {
-  try{
-  let uid = req.body;
-  const user = await User.findOne(uid, (err) => {if(err) res.status(400).send('Not Found')}).then()
-  formated(user.requests).then(data=>
-    res.status(202).send(data));
-  }catch(err){
-    res.status(400).send(err)
+router.post('/notifications', async (req, res) => {
+  try {
+    let uid = req.body;
+    const user = await User.findOne(uid, err => {
+      if (err) res.status(400).send('Not Found');
+    }).then();
+    formated(user.requests).then(data => res.status(202).send(data));
+  } catch (err) {
+    res.status(400).send(err);
   }
 });
 
@@ -165,7 +158,7 @@ router.post('/login', async (req, res, next) => {
 
   // idToken comes from the client app
   if (token) {
-    console.log(token);
+    //console.log(token);
     admin
       .auth()
       .verifyIdToken(token)
@@ -183,6 +176,9 @@ router.post('/login', async (req, res, next) => {
 
   try {
     const user = await User.findOne({ email }).then(user => user);
+    await User.updateOne({ email }, { activity: Date.now() }, err =>
+      console.log(err)
+    );
     //console.log(user);
     res.send({ user: user });
   } catch (err) {
@@ -217,9 +213,11 @@ router.post('/check_login', (req, res) => {
 
 //Profile
 
-router.post('/profile', async(req,res) => {
-  const {id} = req.body;
-  const profile = await User.findOne({uid: id}, err => {if(err) res.status(400).send(err)}).then(); 
+router.post('/profile', async (req, res) => {
+  const { id } = req.body;
+  const profile = await User.findOne({ uid: id }, err => {
+    if (err) res.status(400).send(err);
+  }).then();
   res.status(202).send(profile);
 });
 
@@ -227,17 +225,21 @@ router.post('/profile', async(req,res) => {
 
 router.post('/addFriend', async (req, res) => {
   const { myid, friend } = req.body;
-  const myfriend = await User.findOne({ uid: friend }, err => {if(err) res.status(400).send(err)}).then();
+  const myfriend = await User.findOne({ uid: friend }, err => {
+    if (err) res.status(400).send(err);
+  }).then();
 
-  if(myfriend.requests.includes(myid)){
-    res.status(400).send({done: false, text: 'Ya tienes una solicitud pendiente.'})
-  }else{
-  myfriend.requests.push(myid);  
+  if (myfriend.requests.includes(myid)) {
+    res
+      .status(400)
+      .send({ done: false, text: 'Ya tienes una solicitud pendiente.' });
+  } else {
+    myfriend.requests.push(myid);
   }
-  
+
   await User.replaceOne({ uid: friend }, myfriend, err => {
     if (!err) {
-      res.status(202).send({done: true, text:'Solicitud enviada...'});
+      res.status(202).send({ done: true, text: 'Solicitud enviada...' });
     } else {
       res.status(400).send(err);
     }
@@ -246,39 +248,59 @@ router.post('/addFriend', async (req, res) => {
 
 router.post('/acceptFriend', async (req, res) => {
   const { myid, friend } = req.body;
-  const me = await User.findOne({ uid: myid }, err => {if(err) res.status(400).send(err)}).then();
-  const myfriend = await User.findOne({ uid: friend }, err => {if(err) res.status(400).send(err)}).then();
-  
+  const me = await User.findOne({ uid: myid }, err => {
+    if (err) res.status(400).send(err);
+  }).then();
+  const myfriend = await User.findOne({ uid: friend }, err => {
+    if (err) res.status(400).send(err);
+  }).then();
+
   me.requests = me.requests.filter(request => request !== friend);
   myfriend.friends.push(myid);
   me.friends.push(friend);
 
-  await User.replaceOne({ uid: myid }, me, err => {if(err) res.status(400).send(err)});
-  await User.replaceOne({ uid: friend }, myfriend, err => {if(err) res.status(400).send(err)});
-  res.status(202).send({done: true, text: 'Amistad aceptada.'});
+  await User.replaceOne({ uid: myid }, me, err => {
+    if (err) res.status(400).send(err);
+  });
+  await User.replaceOne({ uid: friend }, myfriend, err => {
+    if (err) res.status(400).send(err);
+  });
+  res.status(202).send({ done: true, text: 'Amistad aceptada.' });
 });
 
 router.post('/declineFriend', async (req, res) => {
   const { myid, friend } = req.body;
-  const me = await User.findOne({ uid: myid }, err => {if(err) res.status(400).send(err)}).then();
-  
+  const me = await User.findOne({ uid: myid }, err => {
+    if (err) res.status(400).send(err);
+  }).then();
+
   me.requests = me.requests.filter(request => request !== friend);
-  await User.replaceOne({ uid: myid }, me, err => {if(err) res.status(400).send(err)});
-  res.status(202).send({done: true, text:'Solicitud rechazada.'});
+  await User.replaceOne({ uid: myid }, me, err => {
+    if (err) res.status(400).send(err);
+  });
+  res.status(202).send({ done: true, text: 'Solicitud rechazada.' });
 });
 
 router.post('/removeFriend', async (req, res) => {
   const { myid, friend } = req.body;
 
-  const me = await User.findOne({ uid: myid }, err => {if(err) res.status(400).send(err)}).then();
-  const myfriend = await User.findOne({ uid: friend }, err => {if(err) res.status(400).send(err)}).then();
+  const me = await User.findOne({ uid: myid }, err => {
+    if (err) res.status(400).send(err);
+  }).then();
+  const myfriend = await User.findOne({ uid: friend }, err => {
+    if (err) res.status(400).send(err);
+  }).then();
 
   me.friends = me.friends.filter(uid => uid !== friend);
   myfriend.friends = myfriend.friends.filter(uid => uid !== myid);
 
-  await User.replaceOne({ uid: myid }, me, err => {if(err) res.status(400).send(err)});
-  await User.replaceOne({ uid: friend }, myfriend, err => {if(err) res.status(400).send(err)});
-  res.status(202).send({done: true, text: 'Amistad eliminada.'});
+  await User.replaceOne({ uid: myid }, me, err => {
+    if (err) res.status(400).send(err);
+  });
+  await User.replaceOne({ uid: friend }, myfriend, err => {
+    if (err) res.status(400).send(err);
+  });
+  res.status(202).send({ done: true, text: 'Amistad eliminada.' });
 });
 
 module.exports = router;

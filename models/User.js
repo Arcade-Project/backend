@@ -60,6 +60,9 @@ const UserSchema = new Schema({
   requests: {
     type: Array,
     default: []
+  },
+  activity: {
+    type: Date
   }
 });
 
