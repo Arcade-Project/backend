@@ -31,7 +31,8 @@ const lookForUser = (element, index) => {
       name: user.nickname,
       score: element.score,
       uid: element.uid,
-      date: element.date
+      date: element.date,
+      game: element.game
     };
   });
 };

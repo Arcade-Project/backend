@@ -27,43 +27,92 @@ router.get('/id', (req, res) => {
     .then(users => res.send(users));
 });
 
-// @route GET api/user
-// @desc Get top users
-// @access Public
-router.post('/players', (req, res) => {
-  const { category, id } = req.body;
-  if (category === 'Top') {
-    User.find()
-      .limit(5)
-      .sort({ date: -1 })
-      .then(users => res.send(users));
-  } else {
-    if (category === 'Active') {
-      User.find()
-        .limit(5)
-        .sort({ activity: -1 })
-        .then(users => res.send(users));
-    } else if (category === 'Friends') {
-      User.find({ friends: id })
-        .limit(5)
-        .sort({ date: -1 })
-        .then(users => res.send(users));
-    }
-  }
-});
 
-const lookForUser = (element, index) => {
-  return User.findOne({ uid: element }).then(user => {
+//for active & friends users
+const lookForScore = (element, index) => {
+  return Score.findOne({ uid: element.uid })
+    .sort({ date: -1 })
+    .then(score => {
+      return {
+        uid: element.uid,
+        nickname: element.nickname,
+        level: element.level,
+        color: element.color,
+        lastScore: score
+      };
+    });
+};
+
+const formatArr = arr => {
+  return Promise.all(arr.map((element, index) => lookForScore(element, index)));
+};
+
+
+//for top players
+const lookForUser2 = (element, index) => {
+  return User.findOne({ uid: element.uid }).then(user => {
     return {
       key: index,
+      uid: user.uid,
       nickname: user.nickname,
-      uid: element
+      level: user.level,
+      color: user.color,
+      lastScore: element
     };
   });
 };
 
-const formated = arr => {
-  return Promise.all(arr.map((element, index) => lookForUser(element, index)));
+const formated2 = scores => {
+  return Promise.all(
+    scores.map((element, index) => lookForUser2(element, index))
+  );
+};
+
+
+// @route GET api/user
+// @desc Get top users
+// @access Public
+router.post('/players', async (req, res) => {
+  const { category, id } = req.body;
+  if (category === 'Top') {
+    const scores = await Score.find({}, err => {
+      if (err) res.status(400).send('not found');
+    }).sort({ score: 1 });
+    formated2(scores).then(data => res.status(202).send(data));
+  } else {
+    if (category === 'Active') {
+      let activeUsers = await User.find()
+        .limit(5)
+        .sort({ activity: -1 });
+      formatArr(activeUsers).then(data => res.status(202).send(data));
+    } else if (category === 'Friends') {
+      let friendUsers = await User.find({ friends: id })
+        .limit(5)
+        .sort({ date: -1 });
+      formatArr(friendUsers).then(data => res.status(202).send(data));
+    }
+  }
+});
+
+
+//for notifications
+const lookForUser = (element, index) => {
+  return User.findOne({ uid: element.uid }).then(user => {
+    return {
+      key: index,
+      name: user.nickname,
+      score: element.score,
+      uid: element.uid,
+      date: element.date,
+      game: element.game
+    };
+  });
+};
+
+const formated = scores => {
+  return Promise.all(
+    scores.map((element, index) => lookForUser(element, index))
+  );
 };
 
 // @route GET api/user
