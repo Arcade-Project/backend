@@ -27,7 +27,7 @@ admin.initializeApp({
 });
 
 mongoose
-  .connect(process.env.LOCAL_MONGO_URL, {
+  .connect(process.env.MONGO_URL, {
     useNewUrlParser: true,
     useCreateIndex: true,
     useUnifiedTopology: true
